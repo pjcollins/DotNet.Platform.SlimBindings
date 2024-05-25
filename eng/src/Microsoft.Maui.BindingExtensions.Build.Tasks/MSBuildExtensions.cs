@@ -19,7 +19,7 @@ namespace Microsoft.Maui.BindingExtensions.Build.Tasks
                 messageArgs: messageArgs);
         }
 
-        public static void LogCodedWarning (this TaskLoggingHelper log, string code, string message, params object [] messageArgs)
+        public static void LogCodedWarning(this TaskLoggingHelper log, string code, string message, params object [] messageArgs)
         {
             log.LogWarning(
                 subcategory: string.Empty,

@@ -4,12 +4,14 @@
 
   <UsingTask TaskName="Sharpie" AssemblyFile="$(BindingExtBuildTasksAssembly)"/>
   <UsingTask TaskName="XcodeBuild" AssemblyFile="$(BindingExtBuildTasksAssembly)"/>
+  <UsingTask TaskName="FixUpApiDefinitions" AssemblyFile="$(BindingExtBuildTasksAssembly)"/>
 
   <PropertyGroup>
     <XcodeProjectConfiguration Condition=" '$(XcodeProjectConfiguration)' == '' ">Release</XcodeProjectConfiguration>
     <XcodeBuildiOS Condition=" '$(XcodeBuildiOS)' == '' ">true</XcodeBuildiOS>
     <XcodeBuildiOSSimulator Condition=" '$(XcodeBuildiOSSimulator)' == '' ">true</XcodeBuildiOSSimulator>
     <XcodeBuildMacCatalyst Condition=" '$(XcodeBuildMacCatalyst)' == '' ">true</XcodeBuildMacCatalyst>
+    <EnableDefaultSharpieiOSItems Condition=" '$(EnableDefaultSharpieiOSItems)' == '' ">false</EnableDefaultSharpieiOSItems>
 
     <_XcArchiveExtraArgs>$(_XcArchiveExtraArgs) ENABLE_BITCODE=NO SKIP_INSTALL=NO SWIFT_INSTALL_OBJC_HEADER=YES BUILD_LIBRARY_FOR_DISTRIBUTION=YES</_XcArchiveExtraArgs>
     <_XcArchiveExtraArgs>$(_XcArchiveExtraArgs) OTHER_LDFLAGS=&quot;-ObjC&quot; OTHER_SWIFT_FLAGS=&quot;-no-verify-emitted-module-interface&quot; OBJC_CFLAGS=&quot;-fno-objc-msgsend-selector-stubs -ObjC&quot;</_XcArchiveExtraArgs>
@@ -19,6 +21,7 @@
     <_GenerateBindingsDependsOn>
       _BuildXcodeProjects;
       _SharpieBindXcodeProjects;
+      _SharpieIncludeApiDefinitions;
       $(_GenerateBindingsDependsOn);
     </_GenerateBindingsDependsOn>
   </PropertyGroup>
@@ -103,15 +106,42 @@
       Condition=" '@(XcodeProjectReference->Count())' != '0' and '@(XcodeProjectReference->'%(SharpieBind)')' == 'true' "
       DependsOnTargets="_GetSharpieBindInputs"
       Inputs="@(_SharpieInputs)"
-      Outputs="@(XcodeProjectReference->'%(RootDir)%(Directory)%(SchemeName)/build/Sharpie/ApiDefinitions.cs')">
+      Outputs="@(XcodeProjectReference->'%(RootDir)%(Directory)%(SchemeName)/build/sharpie/ApiDefinitions.cs')">
 
     <ItemGroup>
-      <_ObjSharpieArgs Include="@(XcodeProjectReference->'--output=%(RootDir)%(Directory)%(SchemeName)/build/Sharpie/ApiDefinitions.cs')" />
+      <_ObjSharpieArgs Include="@(XcodeProjectReference->'--output=%(RootDir)%(Directory)%(SchemeName)/build/sharpie')" />
       <_ObjSharpieArgs Include="--namespace=%(XcodeProjectReference.SharpieNamespace)" />
       <_ObjSharpieArgs Include="@(XcodeProjectReference->'--framework %(RootDir)%(Directory)%(SchemeName)/build/%(SchemeName)-ios.xcarchive/Products/Library/Frameworks/%(SchemeName).framework')" />
     </ItemGroup>
 
     <Sharpie Arguments="bind @(_ObjSharpieArgs, ' ')" />
+  </Target>
+
+  <Target Name="_SharpieIncludeApiDefinitions"
+      Condition=" '@(XcodeProjectReference->Count())' != '0' and '@(XcodeProjectReference->'%(SharpieBind)')' == 'true' and '$(EnableDefaultSharpieiOSItems)' == 'true' "
+      Inputs="@(XcodeProjectReference->'%(RootDir)%(Directory)%(SchemeName)/build/sharpie/ApiDefinitions.cs')"
+      Outputs="$(IntermediateOutputPath)sharpie/SharpieIncludeApiDefinitions.stamp" >
+
+    <!-- Fix up and optionally include generated ApiDefinitions.cs -->
+    <!-- TODO improve design time build / intellisense -->
+    <!--Copy
+        SourceFiles="@(XcodeProjectReference->'%(RootDir)%(Directory)%(SchemeName)/build/sharpie/ApiDefinitions.cs')"
+        DestinationFiles="@(XcodeProjectReference->'$(IntermediateOutputPath)sharpie/%(SchemeName)/ApiDefinitions.in.cs')"
+        SkipUnchangedFiles="true"
+    /-->
+    <FixUpApiDefinitions
+        ApiDefinitionsFiles="@(XcodeProjectReference->'%(RootDir)%(Directory)%(SchemeName)/build/sharpie/ApiDefinitions.cs')"
+        IntermediateOutputPath="$(IntermediateOutputPath)" >
+      <Output TaskParameter="UpdatedApiDefinitionsFiles" ItemName="_GeneratedApiDefinitionsFiles" />
+    </FixUpApiDefinitions>
+
+    <Touch Files="$(IntermediateOutputPath)sharpie/SharpieIncludeApiDefinitions.stamp" AlwaysCreate="true" />
+
+    <ItemGroup>
+      <ObjcBindingApiDefinition Include="@(_GeneratedApiDefinitionsFiles)" />
+      <FileWrites Include="@(_GeneratedApiDefinitionsFiles)"/>
+      <FileWrites Include="$(IntermediateOutputPath)sharpie/SharpieIncludeApiDefinitions.stamp"/>
+    </ItemGroup>
   </Target>
 
 </Project>

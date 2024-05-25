@@ -1,7 +1,8 @@
-﻿using Microsoft.Build.Framework;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+
+using Microsoft.Build.Framework;
 
 namespace Microsoft.Maui.BindingExtensions.Build.Tasks
 {
