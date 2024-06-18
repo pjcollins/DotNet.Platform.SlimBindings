@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
 
+    <!-- Bug here with OnlyBuildOuterIfMultiTargeting when running build of multitargeting project referencing multitargeting project -->
+    <!-- Consider replacing this with per-project file stamp that will not let the target run if one is already executing? 
+    Or can we simply check if this is a library project vs app project? -->
+
   <PropertyGroup>
     <IsRunningOuterBuild Condition=" '$(IsRunningOuterBuild)' == '' ">false</IsRunningOuterBuild>
     <OnlyBuildOuterIfMultiTargeting>false</OnlyBuildOuterIfMultiTargeting>
